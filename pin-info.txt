@@ -7,7 +7,8 @@ Extra libraries from here: https://circuitpython.org/libraries
 Copy these into CIRCUITPYTHON/lib: adafruit_st7735r.mpy, adafruit_display_text
 Screen Wiring:
 +-----------------+-------------+-------------------+----------------------------------------+
-| Screen Terminal | Pico Pin ID | Pico Pin # (1-40) | Notes                                  |+-----------------+-------------+-------------------+----------------------------------------+
+| Screen Terminal | Pico Pin ID | Pico Pin # (1-40) | Notes                                  |
++-----------------+-------------+-------------------+----------------------------------------+
 | LED-            | -           | -                 |                                        |
 +-----------------+-------------+-------------------+----------------------------------------+
 | LED+            | 3V3 (OUT)   | 36                |                                        |
