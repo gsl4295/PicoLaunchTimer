@@ -1,0 +1,4 @@
+circuitpython_stubs
+adafruit-circuitpython-display_text
+adafruit-circuitpython-st7735r
+adafruit-circuitpython-datetime

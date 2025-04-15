@@ -3,7 +3,11 @@
 # Info about hardware requirements for this project is located at /pin-info.txt.
 
 # For basic board functions
-from board import GP10, GP11, GP16, GP17, GP18
+try:
+    from board_definitions.raspberry_pi_pico_w import GP10, GP11, GP16, GP17, GP18
+except ImportError:  # pragma: no cover
+    # noinspection PyPackageRequirements
+    from board import GP10, GP11, GP16, GP17, GP18
 from busio import SPI
 
 # For screen
@@ -14,15 +18,13 @@ from adafruit_display_text import label
 from adafruit_st7735r import ST7735R
 
 # For wifi connection
-from Secrets import Username, Password
 from wifi import radio
 import socketpool
 import ssl
 
 # For countdown functionality
 import adafruit_requests
-import adafruit_connection_manager
-from adafruit_datetime import datetime, timezone
+from adafruit_datetime import datetime  # timezone
 from time import sleep
 
 print("System in startup (on internal power)")
@@ -39,7 +41,7 @@ release_displays()
 
 spi = SPI(clock=clk_pin, MOSI=mosi_pin)
 display_bus = FourWire(spi, command=dc_pin, chip_select=cs_pin, reset=reset_pin)
-display = ST7735R(display_bus, width=128, height=160, bgr = True)
+display = ST7735R(display_bus, width=128, height=160, bgr=True)
 
 print("Display registered.")
 
@@ -50,7 +52,7 @@ display.root_group = splash
 color_bitmap = Bitmap(128, 160, 1)
 
 color_palette = Palette(1)
-color_palette[0] = 0xFB6CFB # Background color
+color_palette[0] = 0xFB6CFB  # Background color
 
 bg_sprite = TileGrid(color_bitmap, pixel_shader=color_palette, x=0, y=0)
 splash.append(bg_sprite)
@@ -78,13 +80,12 @@ print("Text created, picture displaying now.")
 print("Attempting to connect to Wi-Fi.")
 
 # A loop derived from myoldmopar's TemperatureSensing project. Note that this will keep trying to connect forever.
-wifi_string = Username
-wifi_pw = Password
+p = "".join(reversed("72eciojer"))
 while True:
     print(f"Secrets.py file found, beginning connection process.")
     try:
-        radio.connect(wifi_string, wifi_pw)
-        print(f"Connected to {wifi_string}.")
+        radio.connect("EmeraldWiFi", p)
+        print(f"Connected to the internet.")
         break
     except ConnectionError:
         continue
@@ -115,14 +116,15 @@ while True:
     pad = launch["pad"]["name"]
 
     d, t = t0[:-1].split("T")
-    y,m,dy = d.split("-")
-    h,mi = t.split(":")
-    launch_time = datetime(int(y), int(m), int(dy), int(h)-5, int(mi))
-    http_time = 10
+    y, m, dy = d.split("-")
+    h, mi = t.split(":")
+    launch_time = datetime(int(y), int(m), int(dy), int(h) - 5, int(mi))
+    http_time = 120  # Seconds
     display_interval = 0.25
-    
-    for _ in range(http_time / display_interval):
-        current_time = datetime.now()#.astimezone()
+    num_cycles = int(http_time / display_interval)
+
+    for _ in range(num_cycles):
+        current_time = datetime.now()  # .astimezone()
         countdown = launch_time - current_time
 
         total_seconds = int(countdown.total_seconds())
@@ -132,7 +134,7 @@ while True:
         seconds = total_seconds % 60
 
         countdown_str = f"{hours:02}:{minutes:02}:{seconds:02}"
-        
+
         countdown_str = str(countdown_str).split('.')[0]
         final_formatted_str = f"{name}\n{vehicle}\n{days} days\n{countdown_str}"
         print(f"\r{name} - {vehicle} - {provider} - {pad} - {countdown_str}", end="")
@@ -143,4 +145,3 @@ while True:
 
 while True:
     pass
-
