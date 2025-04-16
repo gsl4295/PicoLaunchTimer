@@ -132,7 +132,7 @@ while True:
     h, mi = t.split(":")
     launch_time = datetime(int(y), int(m), int(dy), int(h) - 5, int(mi))
     http_time = 120  # Seconds
-    display_interval = 0.25
+    display_interval = 0.1
     num_cycles = int(http_time / display_interval)
 
     for _ in range(num_cycles):
@@ -167,3 +167,4 @@ while True:
 
 while True:
     pass
+
