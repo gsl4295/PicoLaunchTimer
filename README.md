@@ -20,6 +20,8 @@ Partially adapted by code from [myoldmopar's repo](https://github.com/okielife/T
     - adafruit_datetime
     - adafruit_requests
     - adafruit_st7735r
+- Use environment variables for internet connectivity through circuitpython's built-in "settings.toml" file. 
+  - Set "WIFI" and "PASS" equal to a string of your SSID and password.
 
 ### Other Info
 - It uses the API from [rocketlaunch.live](https://rocketlaunch.live), which isn't great. I'll try and use [nextspaceflight.com](https://nextspaceflight.com) at some point.

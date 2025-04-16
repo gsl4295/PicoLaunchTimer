@@ -4,11 +4,12 @@
 
 # For basic board functions
 try:
-    from board_definitions.raspberry_pi_pico_w import GP10, GP11, GP16, GP17, GP18
+    from board_definitions.raspberry_pi_pico_w import GP10, GP11, GP16, GP17, GP18, LED
 except ImportError:  # pragma: no cover
     # noinspection PyPackageRequirements
-    from board import GP10, GP11, GP16, GP17, GP18
+    from board import GP10, GP11, GP16, GP17, GP18, LED
 from busio import SPI
+from digitalio import DigitalInOut, Direction
 
 # For screen
 from displayio import release_displays, Group, Bitmap, Palette, TileGrid
@@ -21,6 +22,7 @@ from adafruit_st7735r import ST7735R
 from wifi import radio
 import socketpool
 import ssl
+from os import getenv
 
 # For countdown functionality
 import adafruit_requests
@@ -28,6 +30,11 @@ from adafruit_datetime import datetime  # timezone
 from time import sleep
 
 print("System in startup (on internal power)")
+
+# Turn off built-in LED
+led = DigitalInOut(LED)  # Built-in LED
+led.direction = Direction.OUTPUT
+led.value = False
 
 mosi_pin = GP11
 clk_pin = GP10
@@ -80,10 +87,9 @@ print("Text created, picture displaying now.")
 print("Attempting to connect to Wi-Fi.")
 
 # A loop derived from myoldmopar's TemperatureSensing project. Note that this will keep trying to connect forever.
-p = "".join(reversed("72eciojer"))
 while True:
     try:
-        radio.connect("EmeraldWiFi", p)
+        radio.connect(getenv("WIFI"), getenv("PASS"))
         print(f"Connected to the internet.")
         break
     except ConnectionError:
