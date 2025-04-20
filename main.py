@@ -1,5 +1,3 @@
-# This is the single class that controls the entire Pico's functions
-
 # For basic board functions
 try:
     from board_definitions.raspberry_pi_pico_w import GP10, GP11, GP16, GP17, GP18, LED
@@ -60,7 +58,7 @@ class PicoControl:
     def led_toggle(self, toggle: bool) -> None:
         self.led.value = toggle
 
-    def visuals(self, hexcode: str):
+    def visuals(self, hexcode: str, version: int):
         # Add purple background
         self.splash = Group()
         self.display.root_group = self.splash
@@ -81,28 +79,47 @@ class PicoControl:
 
         print("Inner rectangle created")
 
-        # Next Spaceflight header
-        header_text_group = Group(scale=1, x=16, y=18)
-        header_text = "Next Spaceflight"
-        header_text_area = label.Label(FONT, text=header_text, color=int("0x" + hexcode, 16))
-        header_text_group.append(header_text_area)
-        self.splash.append(header_text_group)
+        if version == 1:
+            # Next Spaceflight header
+            self.header_text_group = Group(scale=1, x=16, y=18)
+            self.header_text = "Next Spaceflight"
+            header_text_area = label.Label(FONT, text=self.header_text, color=int("0x" + hexcode, 16))
+            self.header_text_group.append(header_text_area)
+            self.splash.append(self.header_text_group)
+            print("Text created")
 
-        print("Text created")
+            # Large white countdown group, scaled 2x
+            self.countdown_text_group = Group(scale=2, x=16, y=42)
+            self.countdown_text_area = label.Label(FONT, text="", color=0xFFFFFF)
+            self.countdown_text_group.append(self.countdown_text_area)
+            self.splash.append(self.countdown_text_group)
 
-        # Large white countdown group, scaled 2x
-        countdown_text_group = Group(scale=2, x=16, y=42)
-        self.countdown_text_area = label.Label(FONT, text="", color=0xFFFFFF)
-        countdown_text_group.append(self.countdown_text_area)
-        self.splash.append(countdown_text_group)
+            # Smaller colored info group below countdown group
+            self.main_text_group = Group(scale=1, x=16, y=96)
+            self.main_text_area = label.Label(FONT, text="\n\n\nLoading...", color=int("0x" + hexcode, 16))
+            self.main_text_group.append(self.main_text_area)
+            self.splash.append(self.main_text_group)
 
-        # Smaller colored info group below countdown group
-        main_text_group = Group(scale=1, x=16, y=96)
-        self.main_text_area = label.Label(FONT, text="\n\n\nLoading...", color=int("0x" + hexcode, 16))
-        main_text_group.append(self.main_text_area)
-        self.splash.append(main_text_group)
+        elif version == 2:
+            self.header_text_group = Group(scale=1, x=16, y=18)
+            self.header_text = ""
+            header_text_area = label.Label(FONT, text=self.header_text, color=int("0x" + hexcode, 16))
+            self.header_text_group.append(header_text_area)
+            self.splash.append(self.header_text_group)
+            print("Text created")
 
-        print(f"Visuals created with an accent of hexcode {hexcode}")
+            self.countdown_text_group = Group(scale=2, x=16, y=26)
+            self.countdown_text_area = label.Label(FONT, text="", color=0xFFFFFF)
+            self.countdown_text_group.append(self.countdown_text_area)
+            self.splash.append(self.countdown_text_group)
+
+            self.main_text_group = Group(scale=1, x=16, y=50)
+            self.main_text_area = label.Label(FONT, text=f"\n\n\n\n\nPicoLaunchTimer\nv0.1-alpha",
+                                              color=int("0x" + hexcode, 16))
+            self.main_text_group.append(self.main_text_area)
+            self.splash.append(self.main_text_group)
+
+        print(f"Version {version} visuals created with an accent of hexcode {hexcode}")
 
     def wifi_connect(self):
         while True:
@@ -143,6 +160,7 @@ class PicoControl:
         y, m, dy = d.split("-")
         h, mi = t.split(":")
         launch_time = datetime(int(y), int(m), int(dy), int(h) - 5, int(mi))
+        simple_launch_time = str(launch_time).split(" ")[0]  # For displaying on screen sometimes
 
         num_cycles = int(http_time / display_interval)
 
@@ -156,23 +174,20 @@ class PicoControl:
             minutes = (total_seconds % 3600) // 60
             seconds = total_seconds % 60
 
-            if days > 1:
+            if days > 1 or not days:
                 day_logic = f"{days} days"
             elif days == 1:
                 day_logic = f"{days} day"
-            else:
-                day_logic = ""
 
             countdown_str = f"{hours:02}:{minutes:02}:{seconds:02}"
             countdown_str = countdown_str.split('.')[0]
 
             if version == 1:
                 main_formatted_str = f"{self.name}\n{self.vehicle}\n{self.lc}\n{self.country}"
+                countdown_formatted_str = f"{day_logic}\n{countdown_str}"
             elif version == 2:
-                main_formatted_str = f"{self.name}\n{self.vehicle}\n{self.lc}\n{self.country}"
-
-            countdown_formatted_str = f"{day_logic}\n{countdown_str}"
-            # print(f"\r{name} - {vehicle} - {provider} - {pad} - {countdown_str}", end="") <-- For debugging screen errors
+                main_formatted_str = f"{day_logic}\n{self.name}\n{self.vehicle}\n{self.pad}\n{self.lc}\n{self.country}\n{simple_launch_time}"
+                countdown_formatted_str = f"{countdown_str}"
 
             self.countdown_text_area.text = countdown_formatted_str
             self.main_text_area.text = main_formatted_str
@@ -183,18 +198,21 @@ class PicoControl:
 
             sleep(display_interval)
 
+    def run_loop(self, version: int):
+        if __name__ == "__main__":
+            global control
+            control.led_toggle(False)
+            control.visuals("FB6CFB", version)
+            control.wifi_connect()
 
-if __name__ == "__main__":
-    control = PicoControl()
-    control.led_toggle(False)
-    control.visuals("FB6CFB")
-    control.wifi_connect()
+            while True:
+                control.get_launch_info()
+                control.json_error_handling()
+                control.countdown_loop(120, 0.1, version)
 
-    while True:
-        control.get_launch_info()
-        control.json_error_handling()
-        control.countdown_loop(120, 0.1, 1)
+                control.countdown_text_area.text = ""
+                control.main_text_area.text = "Refreshing..."
 
-        control.countdown_text_area.text = ""
-        control.main_text_area.text = "\n\n\nRefreshing..."
 
+control = PicoControl()
+control.run_loop(1)
