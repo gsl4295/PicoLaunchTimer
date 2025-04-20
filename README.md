@@ -24,5 +24,4 @@ Partially adapted by code from [myoldmopar's repo](https://github.com/okielife/T
   - Set "WIFI" and "PASS" equal to a string of your SSID and password.
 
 ### Other Info
-- It uses the API from [rocketlaunch.live](https://rocketlaunch.live), which isn't great. I'll try and use [nextspaceflight.com](https://nextspaceflight.com) at some point.
-- This is an idea I had like 3 years ago... then I just decided to get it done in a couple of hours one day.
+- It uses the API from [rocketlaunch.live](https://rocketlaunch.live), which isn't ideal due to the lack of updates on their website. I'll try and use [nextspaceflight.com](https://nextspaceflight.com) at some point.

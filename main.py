@@ -3,9 +3,9 @@ try:
     from board_definitions.raspberry_pi_pico_w import GP10, GP11, GP16, GP17, GP18, LED
 except ImportError:  # pragma: no cover
     # noinspection PyPackageRequirements
-    from board import GP10, GP11, GP16, GP17, GP18, LED
+    from board import GP10, GP11, GP16, GP17, GP18, GP0, LED
 from busio import SPI
-from digitalio import DigitalInOut, Direction
+from digitalio import DigitalInOut, Direction, Pull
 
 # For screen
 from displayio import release_displays, Group, Bitmap, Palette, TileGrid
@@ -54,6 +54,9 @@ class PicoControl:
         self.pad: str = ""
         self.lc: str = ""
         self.country: str = ""
+        self.button = DigitalInOut(GP0)
+        self.button.direction = Direction.INPUT
+        self.button.pull = Pull.DOWN
 
     def led_toggle(self, toggle: bool) -> None:
         self.led.value = toggle
@@ -165,6 +168,13 @@ class PicoControl:
         num_cycles = int(http_time / display_interval)
 
         for _ in range(num_cycles):
+            if self.button.value:
+                print("button pressed")
+                if version == 1:
+                    version = 2
+                elif version == 2:
+                    version = 1
+
             current_time = datetime.now()  # .astimezone()
             countdown = launch_time - current_time
 
@@ -183,11 +193,13 @@ class PicoControl:
             countdown_str = countdown_str.split('.')[0]
 
             if version == 1:
-                main_formatted_str = f"{self.name}\n{self.vehicle}\n{self.lc}\n{self.country}"
+                main_formatted_str = f"\n\n\n{self.name}\n{self.vehicle}\n{self.lc}\n{self.country}"
                 countdown_formatted_str = f"{day_logic}\n{countdown_str}"
+                self.header_text = "Next Spaceflight"
             elif version == 2:
                 main_formatted_str = f"{day_logic}\n{self.name}\n{self.vehicle}\n{self.pad}\n{self.lc}\n{self.country}\n{simple_launch_time}"
                 countdown_formatted_str = f"{countdown_str}"
+                self.header_text = ""
 
             self.countdown_text_area.text = countdown_formatted_str
             self.main_text_area.text = main_formatted_str
