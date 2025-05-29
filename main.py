@@ -11,7 +11,7 @@ from digitalio import DigitalInOut, Direction, Pull
 from displayio import release_displays, Group, Bitmap, Palette, TileGrid
 from terminalio import FONT
 from fourwire import FourWire
-from adafruit_display_text import label
+from adafruit_display_text import label, outlined_label
 from adafruit_display_text.scrolling_label import ScrollingLabel
 from adafruit_st7735r import ST7735R
 
@@ -27,7 +27,6 @@ from adafruit_datetime import datetime, timedelta  # timezone
 from time import sleep
 
 print("System on internal power")
-
 
 class PicoControl:
     def __init__(self):
@@ -87,19 +86,24 @@ class PicoControl:
         inner_sprite = TileGrid(inner_bitmap, pixel_shader=inner_palette, x=5, y=5)
         self.splash.append(inner_sprite)
 
+        parsed_color = int("0x" + hexcode, 16)
+
         self.countdown_text_group = Group(scale=2, x=16, y=26)
         self.countdown_text_area = label.Label(FONT, text="", color=0xFFFFFF)
         self.countdown_text_group.append(self.countdown_text_area)
         self.splash.append(self.countdown_text_group)
 
+        max_char = 20
+
         self.main_text_group = Group(scale=1, x=16, y=50)
-        self.main_row_1 = label.Label(FONT, text=f"", color=int("0x" + hexcode, 16))
-        self.main_row_2 = label.Label(FONT, text=f"\n", color=int("0x" + hexcode, 16))
-        self.main_row_3 = label.Label(FONT, text=f"\n\n", color=int("0x" + hexcode, 16))
-        self.main_row_4 = label.Label(FONT, text=f"\n\n\n", color=int("0x" + hexcode, 16))
-        self.main_row_5 = label.Label(FONT, text=f"\n\n\n\nPicoLaunchTimer", color=int("0x" + hexcode, 16))
-        self.main_row_6 = label.Label(FONT, text=f"\n\n\n\n\nVersion 0.2", color=int("0x" + hexcode, 16))
-        self.main_row_7 = label.Label(FONT, text=f"\n\n\n\n\n\nLoading...", color=int("0x" + hexcode, 16))
+        self.main_row_1 = ScrollingLabel(FONT, y=0, text=f"", color=parsed_color, max_characters=max_char)
+        self.main_row_2 = ScrollingLabel(FONT, y=15, text=f"", color=parsed_color, max_characters=max_char)
+        self.main_row_3 = ScrollingLabel(FONT, y=30, text=f"", color=parsed_color, max_characters=max_char)
+        self.main_row_4 = ScrollingLabel(FONT, y=45, text=f"", color=parsed_color, max_characters=max_char)
+        self.main_row_5 = ScrollingLabel(FONT, y=60, text=f"PicoLaunchTimer", color=parsed_color,
+                                         max_characters=max_char)
+        self.main_row_6 = label.Label(FONT, y=75, text=f"Version 0.2", color=parsed_color)
+        self.main_row_7 = label.Label(FONT, y=90, text=f"Loading...", color=parsed_color)
         self.main_text_group.append(self.main_row_1)
         self.main_text_group.append(self.main_row_2)
         self.main_text_group.append(self.main_row_3)
@@ -110,6 +114,13 @@ class PicoControl:
         self.splash.append(self.main_text_group)
 
         print(f"Screen rendered with an accent of hexcode {hexcode}")
+
+    def update_scrolls(self):
+        self.main_row_1.update()
+        self.main_row_2.update()
+        self.main_row_3.update()
+        self.main_row_4.update()
+        self.main_row_5.update()
 
     def wifi_connect(self):
         while True:
@@ -156,7 +167,7 @@ class PicoControl:
 
     def manual_launch_info(self):
         # Variables in order of display on screen
-        self.t0 = "2025-05-27T23:30Z"  # T-0 time is formatted as "YYYY-MM-DDTHH:MMZ". Input time should be in UTC.
+        self.t0 = "2025-09-25T05:00Z"  # T-0 time is formatted as "YYYY-MM-DDTHH:MMZ". Input time should be in UTC.
         self.name = "Flight 9"
         self.vehicle = "Starship"
         self.pad = "OLIT-A"
@@ -182,7 +193,7 @@ class PicoControl:
 
         for _ in range(num_cycles):
             if self.button.value:
-                print("Button pressed, acquiring new data")
+                print("Button pressed, acquiring the newest data")
                 self.countdown_text_area.text = f"Loading"
                 sleep(1)
                 if self.manual_setting:
@@ -215,34 +226,37 @@ class PicoControl:
 
             countdown_str = countdown_str.split('.')[0]
 
-            # main_formatted_str = f"{self.name}\n{self.vehicle}\n{self.pad}\n{self.lc}\n{self.country}\n{self.launch_date}\nManual: {self.manual_setting}"
             self.main_row_1.text = f"{self.name}"
-            self.main_row_2.text = f"\n{self.vehicle}"
-            self.main_row_3.text = f"\n\n{self.pad}"
-            self.main_row_4.text = f"\n\n\n{self.lc}"
-            self.main_row_5.text = f"\n\n\n\n{self.country}"
-            self.main_row_6.text = f"\n\n\n\n\n{self.launch_date}"
-            self.main_row_7.text = f"\n\n\n\n\n\nManual: {self.manual_setting}"
+            self.main_row_2.text = f"{self.vehicle}"
+            self.main_row_3.text = f"{self.pad}"
+            self.main_row_4.text = f"{self.lc}"
+            self.main_row_5.text = f"{self.country}"
+            self.main_row_6.text = f"{self.launch_date}"
+            self.main_row_7.text = f"Manual: {self.manual_setting}"
 
             self.countdown_text_area.text = f"{countdown_str}"
 
             self.counter += 1
             if self.counter == 1:
-                print("Countdown active")
-                print(f"Manual flag set to {self.manual_setting}")
+                print(f"Countdown active, manual flag set to {self.manual_setting}")
+            elif self.counter / 10 == round(self.counter / 10):
+                pass
+
+            self.update_scrolls()
 
             sleep(display_interval)
 
-    def run_loop(self, setting: bool):  # setting argument is just for the initial mode or if you don't have a button
+    def run_loop(self, setting: bool,
+                 hexcode="47D700"):  # setting argument is just for the initial mode or if you don't have a button
         self.led_toggle(False)
-        self.visuals("47D700")
+        self.visuals(hexcode)
         self.wifi_connect()
         self.manual_setting = setting
+
         while True:
             if self.manual_setting:
                 pass
             else:
-                print("T-40 hold... getting automatic launch data")
                 self.get_launch_info()
             self.json_error_handling()
             self.countdown_loop(120, 0.1)
