@@ -1,4 +1,3 @@
-# For basic board functions
 try:
     from board_definitions.raspberry_pi_pico_w import GP10, GP11, GP16, GP17, GP18, LED
 except ImportError:  # pragma: no cover
@@ -6,8 +5,8 @@ except ImportError:  # pragma: no cover
     from board import GP10, GP11, GP16, GP17, GP18, GP0, LED
 from busio import SPI
 from digitalio import DigitalInOut, Direction, Pull
+import gc
 
-# For screen
 from displayio import release_displays, Group, Bitmap, Palette, TileGrid
 from terminalio import FONT
 from fourwire import FourWire
@@ -15,18 +14,17 @@ from adafruit_display_text import label, outlined_label
 from adafruit_display_text.scrolling_label import ScrollingLabel
 from adafruit_st7735r import ST7735R
 
-# For wifi connection
 from wifi import radio
 import socketpool
 import ssl
 from os import getenv
 
-# For countdown functionality
 import adafruit_requests
 from adafruit_datetime import datetime, timedelta  # timezone
 from time import sleep
 
 print("System on internal power")
+
 
 class PicoControl:
     def __init__(self):
@@ -65,8 +63,13 @@ class PicoControl:
         self.manual_setting: bool = False
         self.utc_delta = timedelta(hours=5)  # Change in timezone from UTC
 
-    def led_toggle(self, toggle: bool) -> None:
+    def led_toggle(self, toggle: bool):
         self.led.value = toggle
+
+    def manage_memory(self):
+        old_mem_available = gc.mem_free()
+        gc.collect()
+        print(f"Cleaned up memory. {old_mem_available} --> {gc.mem_free()}")
 
     def visuals(self, hexcode: str):
         # Add purple background
@@ -93,15 +96,12 @@ class PicoControl:
         self.countdown_text_group.append(self.countdown_text_area)
         self.splash.append(self.countdown_text_group)
 
-        max_char = 20
-
         self.main_text_group = Group(scale=1, x=16, y=50)
-        self.main_row_1 = ScrollingLabel(FONT, y=0, text=f"", color=parsed_color, max_characters=max_char)
-        self.main_row_2 = ScrollingLabel(FONT, y=15, text=f"", color=parsed_color, max_characters=max_char)
-        self.main_row_3 = ScrollingLabel(FONT, y=30, text=f"", color=parsed_color, max_characters=max_char)
-        self.main_row_4 = ScrollingLabel(FONT, y=45, text=f"", color=parsed_color, max_characters=max_char)
-        self.main_row_5 = ScrollingLabel(FONT, y=60, text=f"PicoLaunchTimer", color=parsed_color,
-                                         max_characters=max_char)
+        self.main_row_1 = ScrollingLabel(FONT, y=0, animate_time=0.5, text=f"", color=parsed_color)
+        self.main_row_2 = ScrollingLabel(FONT, y=15, animate_time=0.5, text=f"", color=parsed_color)
+        self.main_row_3 = ScrollingLabel(FONT, y=30, animate_time=0.5, text=f"", color=parsed_color)
+        self.main_row_4 = ScrollingLabel(FONT, y=45, animate_time=0.5, text=f"", color=parsed_color)
+        self.main_row_5 = ScrollingLabel(FONT, y=60, animate_time=0.5, text=f"PicoLaunchTimer", color=parsed_color)
         self.main_row_6 = label.Label(FONT, y=75, text=f"Version 0.2", color=parsed_color)
         self.main_row_7 = label.Label(FONT, y=90, text=f"Loading...", color=parsed_color)
         self.main_text_group.append(self.main_row_1)
@@ -139,6 +139,7 @@ class PicoControl:
         try:
             self.launch = self.content["result"][0]
             self.t0 = self.launch["t0"]  # Define t0 first here to avoid error with countdown loop *Temporary fix*
+            self.win_open = self.launch["win_open"]
             self.name = self.launch["name"]
             self.vehicle = self.launch["vehicle"]["name"]
             self.pad = self.launch["pad"]["name"]
@@ -149,6 +150,12 @@ class PicoControl:
 
     def define_auto_vars(self):  # Separate function simply for running during main countdown loop
         self.t0 = self.launch["t0"]
+        self.win_open = self.launch["win_open"]
+
+        # If an official T-0 time isn't listed, but a window opening time is, use it instead
+        if self.launch["t0"] is None and self.launch["win_open"] is not None:
+            self.t0 = self.launch["win_open"]
+
         self.name = self.launch["name"]
         self.vehicle = self.launch["vehicle"]["name"]
         self.pad = self.launch["pad"]["name"]
@@ -159,16 +166,10 @@ class PicoControl:
         self.y, self.m, self.dy = d.split("-")
         self.h, self.mi = t.split(":")
 
-    def json_error_handling(self):
-        # If an official T-0 time isn't listed, but a window opening time is, use it instead
-        if self.t0 is None and self.win_open is not None:
-            print("Error: Found no T-0 time. Proceeding with window opening time")
-            self.t0 = self.win_open
-
     def manual_launch_info(self):
         # Variables in order of display on screen
-        self.t0 = "2025-09-25T05:00Z"  # T-0 time is formatted as "YYYY-MM-DDTHH:MMZ". Input time should be in UTC.
-        self.name = "Flight 9"
+        self.t0 = "2025-06-22T23:30Z"  # T-0 time is formatted as "YYYY-MM-DDTHH:MMZ". Input time should be in UTC.
+        self.name = "Flight 10"
         self.vehicle = "Starship"
         self.pad = "OLIT-A"
         self.lc = "Starbase, TX"
@@ -185,6 +186,7 @@ class PicoControl:
             self.define_auto_vars()
         else:
             pass
+
         self.utc_launch_time = datetime(int(self.y), int(self.m), int(self.dy), int(self.h), int(self.mi))
         self.full_launch_time = self.utc_launch_time - self.utc_delta
         self.launch_date = str(self.full_launch_time).split(" ")[0]
@@ -238,7 +240,7 @@ class PicoControl:
 
             self.counter += 1
             if self.counter == 1:
-                print(f"Countdown active, manual flag set to {self.manual_setting}")
+                print(f"Countdown active, manual flag initially set to {self.manual_setting}")
             elif self.counter / 10 == round(self.counter / 10):
                 pass
 
@@ -246,8 +248,7 @@ class PicoControl:
 
             sleep(display_interval)
 
-    def run_loop(self, setting: bool,
-                 hexcode="47D700"):  # setting argument is just for the initial mode or if you don't have a button
+    def run_loop(self, setting: bool, hexcode="47D700"):
         self.led_toggle(False)
         self.visuals(hexcode)
         self.wifi_connect()
@@ -258,9 +259,9 @@ class PicoControl:
                 pass
             else:
                 self.get_launch_info()
-            self.json_error_handling()
-            self.countdown_loop(120, 0.1)
+            self.countdown_loop(120, 0.15)
+            self.manage_memory()
 
 
 control = PicoControl()
-control.run_loop(True)
+control.run_loop(False)
