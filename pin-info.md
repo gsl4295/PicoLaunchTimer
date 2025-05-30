@@ -1,11 +1,13 @@
-Hardware:
-Raspberry Pico H: https://www.amazon.com/gp/product/B09HC9X24J
-1.8" ST7735R SPI 128x160 TFT LCD with PCB: https://www.amazon.com/dp/B00LSG51MM
-Using CircuitPython:
-UF2 available at: https://circuitpython.org/board/raspberry_pi_pico/
-Extra libraries from here: https://circuitpython.org/libraries
-Copy these into CIRCUITPYTHON/lib: adafruit_st7735r.mpy, adafruit_display_text
-Screen Wiring:
+## Wiring
+### Button
+In the code I have a flag to change the countdown between the next rocket launch and your own date & time.
+A button is technically optional to use this feature, but if you don't use one, you'll have to hardcode the boolean
+value of `self.manual_setting` to `True` or `False` depending on what configuration you want.<br>---<br>
+So, in the case that you **do** have a button lying around, I have it connected to **Pin 1** (GP0) on my Pico.
+### Screen
+The basic pinout for my personal screen is here, but remember that all screens have different layouts for their pins.<br>
+If you have concerns, I recommend checking your screen's documentation or asking the CircuitPython forums.
+```
 +-----------------+-------------+-------------------+----------------------------------------+
 | Screen Terminal | Pico Pin ID | Pico Pin # (1-40) | Notes                                  |
 +-----------------+-------------+-------------------+----------------------------------------+
@@ -41,3 +43,4 @@ Screen Wiring:
 +-----------------+-------------+-------------------+----------------------------------------+
 | GND             | GND         | 38                |                                        |
 +-----------------+-------------+-------------------+----------------------------------------+
+```
