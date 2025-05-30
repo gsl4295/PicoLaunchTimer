@@ -30,7 +30,7 @@ PASS = "placeholder"
   it should be a fairly simple installation process.
 
 ### Features
-As of the time of writing, this project is at version 0.2-beta. Here's some of the features right now:
+As of the time of writing, this project is at version 0.3. Here's some of the features right now:
 - *Manual countdown data*
   - Toggles the screen between the next orbital rocket and a hardcoded date & time input from the user.
   - This feature can be toggled with a button. More details are located in `pin-info.md`

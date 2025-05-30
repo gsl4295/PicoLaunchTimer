@@ -104,7 +104,7 @@ class PicoControl:
                                          text=f"---------------", color=accent)
         self.main_row_5 = ScrollingLabel(FONT, y=60, animate_time=0.5, max_characters=max_chars,
                                          text=f"PicoLaunchTimer", color=accent)
-        self.main_row_6 = label.Label(FONT, y=75, text=f"Version 0.2.1", color=accent)
+        self.main_row_6 = label.Label(FONT, y=75, text=f"Version 0.3", color=accent)
         self.main_row_7 = label.Label(FONT, y=90, text=f"Loading...", color=accent)
         self.main_text_group.append(self.main_row_1)
         self.main_text_group.append(self.main_row_2)
@@ -129,15 +129,14 @@ class PicoControl:
             try:
                 radio.connect(getenv("WIFI"), getenv("PASS"))
                 print(f"Connected to the Internet via {getenv("WIFI")}")
-                return
+                break
             except ConnectionError:
                 continue
             print("No connection, trying again in 2 seconds")
             sleep(2)
 
     def get_utc_delta(self, country="America", zone="Chicago", st_delta=-6):
-        sleep(1)
-        time_response = self.requests.get(f"https://timeapi.io/api/time/current/zone?timeZone={country}%2F{zone}")
+        time_response = self.requests.get(f"http://timeapi.io/api/time/current/zone?timeZone={country}%2F{zone}")
         time_content = time_response.json()
         time_response.close()
         utc_delta_bool = time_content["dstActive"]
@@ -152,9 +151,7 @@ class PicoControl:
             dst_delta = 1
 
         total_delta = dst_delta + st_delta
-        if self.counter == 0:
-            print(f"Received a universal time delta from timeapi.io: {total_delta}")
-
+        print(f"Received a universal time delta from timeapi.io: {total_delta}")
         return total_delta
 
     def get_launch_info(self):
@@ -204,7 +201,7 @@ class PicoControl:
         self.y, self.m, self.dy = d.split("-")
         self.h, self.mi = t.split(":")
 
-    def countdown_loop(self, http_time: int, display_interval: int):
+    def countdown_loop(self, http_time=120, display_interval=0.2):
         if self.manual_setting:
             self.manual_launch_info()
         elif not self.manual_setting:
@@ -212,8 +209,8 @@ class PicoControl:
         else:
             pass
         self.utc_launch_time = datetime(int(self.y), int(self.m), int(self.dy), int(self.h), int(self.mi))
-        utc_delta = timedelta(hours=self.get_utc_delta())
-        self.full_launch_time = self.utc_launch_time + utc_delta
+        overall_utc_delta = timedelta(hours=self.utc_delta)
+        self.full_launch_time = self.utc_launch_time + overall_utc_delta
         self.launch_date = str(self.full_launch_time).split(" ")[0]
 
         num_cycles = int(http_time / display_interval)
@@ -230,7 +227,7 @@ class PicoControl:
                     self.manual_setting = True
                     return
 
-            current_time = datetime.now()  # TODO try .astimezone()
+            current_time = datetime.now()
             countdown = self.full_launch_time - current_time
 
             total_seconds = int(countdown.total_seconds())
@@ -273,11 +270,12 @@ class PicoControl:
 
             sleep(display_interval)
 
-    def run_loop(self, setting: bool, r=71, g=215, b=0):
+    def run_loop(self, setting=False, r=71, g=215, b=0):
         self.led_toggle(False)
         self.visuals((r, g, b))
         self.wifi_connect()
         self.manual_setting = setting
+        self.utc_delta = self.get_utc_delta()
 
         while True:
             if self.manual_setting:
@@ -288,5 +286,6 @@ class PicoControl:
             self.manage_memory()
 
 
-control = PicoControl()
-control.run_loop(False)
+if __name__ == "__main__":
+    control = PicoControl()
+    control.run_loop()
