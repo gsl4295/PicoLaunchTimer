@@ -65,9 +65,13 @@ class PicoControl:
     def led_toggle(self, toggle: bool):
         self.led.value = toggle
 
-    def manage_memory(self):
-        old_mem_available = gc.mem_free()
-        gc.collect()
+    def manage_memory(self, verbose=False):
+        if verbose:
+            old_memory_available = gc.mem_free()
+            gc.collect()
+            print(f"Memory cleaned: {old_memory_available} -> {gc.mem_free()} bytes free")
+        else:
+            gc.collect()
 
     def visuals(self, accent: tuple):
         # Add purple background
@@ -190,24 +194,28 @@ class PicoControl:
 
     def manual_launch_info(self):
         # Variables in order of display on screen
-        self.t0 = "2025-06-22T23:30Z"  # T-0 time is formatted as "YYYY-MM-DDTHH:MMZ". Input time should be in UTC.
-        self.name = "Flight 10"
-        self.vehicle = "Starship"
-        self.pad = "OLIT-A"
-        self.lc = "Starbase, TX"
-        self.country = "United States"
+        self.t0 = "2026-02-06T19:00Z"  # T-0 time is formatted as "YYYY-MM-DDTHH:MMZ" where T and Z won't change. Input time should be in UTC.
+        self.name = "Milan-Cortina"
+        self.vehicle = "Games of the"
+        self.pad = "XXV Winter"
+        self.lc = "Olympiad"
+        self.country = "Italy, Europe"
 
         d, t = self.t0[:-1].split("T")
         self.y, self.m, self.dy = d.split("-")
         self.h, self.mi = t.split(":")
 
     def countdown_loop(self, http_time=120, display_interval=0.2):
+        # http_time defines the time (seconds) that it takes for countdown_loop() to break out of the loop.
+        # display_interval defines the time (seconds) that the display has before refreshing.
+
         if self.manual_setting:
             self.manual_launch_info()
         elif not self.manual_setting:
             self.define_auto_vars()
         else:
             pass
+
         self.utc_launch_time = datetime(int(self.y), int(self.m), int(self.dy), int(self.h), int(self.mi))
         overall_utc_delta = timedelta(hours=self.utc_delta)
         self.full_launch_time = self.utc_launch_time + overall_utc_delta
@@ -215,11 +223,11 @@ class PicoControl:
 
         num_cycles = int(http_time / display_interval)
 
-        for _ in range(num_cycles):
+        for cycle in range(num_cycles):
             if self.button.value:
                 print("Button pressed, acquiring the newest data")
                 self.countdown_text_area.text = f"LOADING"
-                sleep(1)  # Sleep for protection against accidental button presses
+                sleep(0.5)  # Protection against accidental button presses
                 if self.manual_setting:
                     self.manual_setting = False
                     return
@@ -282,10 +290,10 @@ class PicoControl:
                 pass
             else:
                 self.get_launch_info()
-            self.countdown_loop(120, 0.2)
-            self.manage_memory()
+            self.countdown_loop()
+            self.manage_memory(verbose=False)
 
 
 if __name__ == "__main__":
     control = PicoControl()
-    control.run_loop()
+    control.run_loop(setting=True)

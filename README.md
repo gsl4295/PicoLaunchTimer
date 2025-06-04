@@ -1,5 +1,7 @@
 # PicoLaunchTimer
-A CircuitPython-based clock dedicated to showing a live countdown to the next orbital rocket launch.
+![GitHub Release](https://img.shields.io/github/v/release/gsl4295/PicoLaunchTimer?include_prereleases&sort=date&display_name=tag)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/gsl4295/PicoLaunchTimer)<br>
+A CircuitPython-based microcontroller dedicated to showing a live countdown to the next orbital rocket launch.
 
 ### Hardware
 - The pin diagram for my screen specifically is located in `pin-info.md`.
@@ -26,11 +28,10 @@ A CircuitPython-based clock dedicated to showing a live countdown to the next or
 WIFI = "placeholder"
 PASS = "placeholder"
 ```
-- Then, after all that, just run the code! I left a few options that I'll go over in the Features section, but
+- Then just run the code. I left a few options that I'll go over in the Features section, but
   it should be a fairly simple installation process.
 
 ### Features
-As of the time of writing, this project is at version 0.3. Here's some of the features right now:
 - *Manual countdown data*
   - Toggles the screen between the next orbital rocket and a hardcoded date & time input from the user.
   - This feature can be toggled with a button. More details are located in `pin-info.md`
@@ -41,12 +42,12 @@ As of the time of writing, this project is at version 0.3. Here's some of the fe
   - Even though there are more reliable sources to get real launch data from, this website is pretty outstanding too.
   - It has an API, which is free (to an extent) for all users, and I could only describe it as the Wikipedia of aerospace websites.
 - *Automatic DST Conversion*
-  - It calls [timeapi.io](timeapi.io) in order to update the daylight savings time calculations in prep for each countdown loop.
+  - It calls [timeapi.io](https://timeapi.io) in order to update the daylight savings time calculations at startup only.
 
 ### Future Additions
 - I want to make this timer even more functional at some point, which definitely includes adding a simple clock function.
   - This would drastically strip down the code, not needing all the launch data that I manage here.
-- Unit testing (also known as issue #1)
+- Unit testing
   - Sidenote: this would be the first project that I actually add that to. Fun!
 - Better error handling
   - Right now my code just wings it, and if the API doesn't give it the things that it wants, it will crash out.
