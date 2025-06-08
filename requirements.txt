@@ -1,4 +1,7 @@
 circuitpython_stubs
-adafruit-circuitpython-display_text
-adafruit-circuitpython-st7735r
-adafruit-circuitpython-datetime
+adafruit_circuitpython_display_text
+adafruit_circuitpython_datetime
+adafruit_circuitpython_requests
+adafruit_circuitpython_st7735r
+adafruit_circuitpython_connectionmanager
+adafruit_circuitpython_ticks
