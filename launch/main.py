@@ -1,5 +1,5 @@
 try:
-    from board_definitions.raspberry_pi_pico_w import GP10, GP11, GP16, GP17, GP18, LED
+    from board_definitions.raspberry_pi_pico_w import GP10, GP11, GP16, GP17, GP18, GP0, LED
 except ImportError:  # pragma: no cover
     # noinspection PyPackageRequirements
     from board import GP10, GP11, GP16, GP17, GP18, GP0, LED
@@ -22,8 +22,6 @@ from os import getenv
 import adafruit_requests
 from adafruit_datetime import datetime, timedelta
 from time import sleep
-
-print("System on internal power")
 
 
 class PicoControl:
@@ -295,5 +293,6 @@ class PicoControl:
 
 
 if __name__ == "__main__":
+    print("System on internal power")
     control = PicoControl()
     control.run_loop(setting=True)
