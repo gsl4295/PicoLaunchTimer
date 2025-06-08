@@ -3,7 +3,7 @@
 In the code I have a flag to change the countdown between the next rocket launch and your own date & time.
 A button is technically optional to use this feature, but if you don't use one, you'll have to hardcode the boolean
 value of `self.manual_setting` to `True` or `False` depending on what configuration you want.<br>---<br>
-So, in the case that you **do** have a button lying around, I have it connected to **Pin 1** (GP0) on my Pico.
+So, in the case that you **do** have a button lying around, connect it to *Pin 1 (GP0)* on your Pico.
 ### Screen
 The basic pinout for my personal screen is here, but remember that all screens have different layouts for their pins.<br>
 If you have concerns, I recommend checking your screen's documentation or asking the CircuitPython forums.
@@ -44,3 +44,4 @@ If you have concerns, I recommend checking your screen's documentation or asking
 | GND             | GND         | 38                |                                        |
 +-----------------+-------------+-------------------+----------------------------------------+
 ```
+Credit for this beautiful diagram (that I have no idea how to make myself): [@myoldmopar](https://github.com/myoldmopar)

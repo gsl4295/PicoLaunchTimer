@@ -4,7 +4,8 @@
 A CircuitPython-based microcontroller dedicated to showing a live countdown to the next orbital rocket launch.
 
 ### Hardware
-- The pin diagram for my screen specifically is located in `pin-info.md`.
+- The pin diagram for my screen specifically is located in `/info/pin-info.md`.
+- A top-down view of my setup is in `/info/pico-top-down-view.jpg`
 - I used a [Raspberry Pi WH](https://www.amazon.com/Raspberry-Pi-RP-PICO-WH-Pico-WH/dp/B0C58X9Q77) (wifi enabled, headers attached)
 - The exact screen I used is a 1.8" 128x160 SPI TFT display. Find it [here on Amazon](https://a.co/d/0OCU4uG).
 
@@ -39,8 +40,9 @@ PASS = "placeholder"
   - One of the main goals I had with this project was to make clean, modular graphics on the display.
   - The `adafruit_display_text` library is simply amazing for this purpose, as you'll especially see from the scrolling text.
 - *[RocketLaunch.Live](https://rocketlaunch.live) integration*
-  - Even though there are more reliable sources to get real launch data from, this website is pretty outstanding too.
-  - It has an API, which is free (to an extent) for all users, and I could only describe it as the Wikipedia of aerospace websites.
+  - This code partially relies on data from [the rocketlaunch.live API](https://rocketlaunch.live/api).
+  - It's like the Wikipedia of launch tracking - anyone can contribute.
+  - Plus, more contributions will only make this code more reliable!
 - *Automatic DST Conversion*
   - It calls [timeapi.io](https://timeapi.io) in order to update the daylight savings time calculations at startup only.
 
@@ -54,5 +56,4 @@ PASS = "placeholder"
   - Maybe a better term for this would be "anger management" in that case
 
 ### Footnotes
-This project truly serves as my first personal coding endeavor alongside my newly developing website.<br>
-It's been an amazing time learning more about programming and I do want to take this hobby further.
+Thank you for reading! More to come.
