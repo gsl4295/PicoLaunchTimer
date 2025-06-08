@@ -1,5 +1,6 @@
 # PicoLaunchTimer
 ![GitHub Release](https://img.shields.io/github/v/release/gsl4295/PicoLaunchTimer?include_prereleases&sort=date&display_name=tag)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/t/gsl4295/PicoLaunchTimer)
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/gsl4295/PicoLaunchTimer)<br>
 A CircuitPython-based microcontroller dedicated to showing a live countdown to the next orbital rocket launch.
 
