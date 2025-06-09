@@ -64,14 +64,6 @@ class PicoControl:
         self.button.pull = Pull.DOWN
         self.manual_setting: bool = False
         self.utc_delta: int = 0
-        self.countdown_text_area = label.Label(FONT, text="", color=0x000000)
-        self.main_row_1 = ScrollingLabel(FONT, text="", color=0x000000)
-        self.main_row_2 = ScrollingLabel(FONT, text="", color=0x000000)
-        self.main_row_3 = ScrollingLabel(FONT, text="", color=0x000000)
-        self.main_row_4 = ScrollingLabel(FONT, text="", color=0x000000)
-        self.main_row_5 = ScrollingLabel(FONT, text="", color=0x000000)
-        self.main_row_6 = ScrollingLabel(FONT, text="", color=0x000000)
-        self.main_row_7 = ScrollingLabel(FONT, text="", color=0x000000)
 
     def led_toggle(self, toggle: bool):
         self.led.value = toggle
