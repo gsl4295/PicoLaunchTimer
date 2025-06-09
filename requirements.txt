@@ -5,3 +5,6 @@ adafruit_circuitpython_requests
 adafruit_circuitpython_st7735r
 adafruit_circuitpython_connectionmanager
 adafruit_circuitpython_ticks
+coverage
+flake8
+pytest
