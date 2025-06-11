@@ -64,6 +64,15 @@ class PicoControl:
         self.button.pull = Pull.DOWN
         self.manual_setting: bool = False
         self.utc_delta: int = 0
+        self.time_response: dict = {}
+        self.countdown_text_area = None
+        self.main_row_1 = None
+        self.main_row_2 = None
+        self.main_row_3 = None
+        self.main_row_4 = None
+        self.main_row_5 = None
+        self.main_row_6 = None
+        self.main_row_7 = None
 
     def led_toggle(self, toggle: bool):
         self.led.value = toggle
@@ -71,15 +80,22 @@ class PicoControl:
     # noinspection PyUnresolvedReferences
     @staticmethod
     def manage_memory(verbose=False):
+        # Memory cleanup.
+        # verbose (bool) - default: False - Self-explanatory
+
+        old_memory_available = gc.mem_free()
+        gc.collect()
+        new_memory_available = gc.mem_free()
         if verbose:
-            old_memory_available = gc.mem_free()
-            gc.collect()
-            print(f"Memory cleaned: {old_memory_available} -> {gc.mem_free()} bytes free")
-        else:
-            gc.collect()
+            print(f"Memory cleaned: {old_memory_available} -> {new_memory_available} bytes free")
+        return old_memory_available, new_memory_available
+
 
     def visuals(self, accent: tuple):
-        # Add purple background
+        # Sets up the screen's color scheme, all 7 rows of data, and the countdown section.
+        # accent (tuple) - default: None - The accent of the screen, expressed in hexcode notation.
+
+        # Add background
         splash = Group()
         self.display.root_group = splash
         color_bitmap = Bitmap(128, 160, 1)
@@ -132,6 +148,7 @@ class PicoControl:
         self.main_row_3.update()
         self.main_row_4.update()
         self.main_row_5.update()
+        return "Screen scrolled"
 
     @staticmethod
     def wifi_connect():
@@ -139,34 +156,36 @@ class PicoControl:
             try:
                 radio.connect(getenv("WIFI"), getenv("PASS"))
                 print(f"Connected to the Internet via {getenv("WIFI")}")
-                return
+                return "Connected"
             except ConnectionError:
                 print("No connection, trying again in 2 seconds")
                 sleep(2)
                 continue
 
     def get_utc_delta(self, country="America", zone="Chicago", st_delta=-6) -> int:
+        # Gets the UTC delta from https://timeapi.io
+        # country (str) - default: "America"
+        # zone (str) - default: "Chicago"
+        # st_delta (int) - default: -6 - the UTC delta when a specific timezone is in *standard time.*
+
         # noinspection HttpUrlsUsage
-        time_response = self.requests.get(f"http://timeapi.io/api/time/current/zone?timeZone={country}%2F{zone}")
-        time_content = time_response.json()
-        time_response.close()
+        self.time_response = self.requests.get(f"http://timeapi.io/api/time/current/zone?timeZone={country}%2F{zone}")
+        time_content = self.time_response.json()
+        self.time_response.close()
         utc_delta_bool = time_content["dstActive"]
 
         if utc_delta_bool:
             dst_delta = 1
-        elif not utc_delta_bool:
-            dst_delta = 0
         else:
-            if self.counter == 0:
-                print("Didn't receive a good boolean, defaulting to daylight savings off")
-            dst_delta = 1
+            dst_delta = 0
 
         total_delta = dst_delta + st_delta
         print(f"Received a universal time delta from timeapi.io: {total_delta}")
         return total_delta
 
     def get_launch_info(self):
-        """ Sets the self.launch variable to the next upcoming launch from rocketlaunch.live"""
+        # Gets the latest launch data from https://rocketlaunch.live/api
+
         response = self.requests.get("https://fdo.rocketlaunch.live/json/launches/next/1")
         content = response.json()
         response.close()
@@ -184,7 +203,9 @@ class PicoControl:
                 }
             }
 
-    def define_auto_vars(self):  # Separate function simply for running during main countdown loop
+    def define_auto_vars(self):
+        # Redefines the main variables of the countdown to the ones given from get_launch_info()
+
         self.t0 = self.launch["t0"]
         self.win_open = self.launch["win_open"]
 
@@ -205,6 +226,7 @@ class PicoControl:
     def manual_launch_info(self):
         # Variables in order of display on screen
         # T-0 time is formatted as "YYYY-MM-DDTHH:MMZ" where T and Z won't change. Input time should be in UTC.
+
         self.t0 = "2026-02-06T19:00Z"
         self.name = "Milan-Cortina"
         self.vehicle = "Games of the"
@@ -217,8 +239,8 @@ class PicoControl:
         self.h, self.mi = t.split(":")
 
     def countdown_loop(self, http_time=120, display_interval=0.2):
-        # http_time defines the time (seconds) that it takes for countdown_loop() to break out of the loop.
-        # display_interval defines the time (seconds) that the display has before refreshing.
+        # http_time (int) - default: 120 - the total time (in seconds) that the loop takes to reset and grab more data
+        # display_interval (float) - default: 0.2 - interval (in seconds) to let the screen sleep each cycle
 
         if self.manual_setting:
             self.manual_launch_info()
@@ -288,22 +310,31 @@ class PicoControl:
 
             sleep(display_interval)
 
-    def run_loop(self, setting=False, r=71, g=215, b=0):
+    def run_loop(self, loop=True, setting=False, r=71, g=215, b=0):
+        # The main setup + loop of this code.
+        # loop (bool) - default: True - specifies if the user wants to actually run the loop or not
+        # setting (bool) - default: False - the initial mode of the screen to possibly show the hardcoded time
+        # r, g, b (ints) - defaults: 71, 215, 0 - hexcode of the accent of the display
+
         self.led_toggle(False)
         self.visuals((r, g, b))
         self.wifi_connect()
         self.manual_setting = setting
         self.utc_delta = self.get_utc_delta()
-        while True:
-            if self.manual_setting:
-                pass
-            else:
-                self.get_launch_info()
-            self.countdown_loop()
-            self.manage_memory(verbose=False)
+
+        if loop:
+            while True:
+                if self.manual_setting:
+                    pass
+                else:
+                    self.get_launch_info()
+                self.countdown_loop()
+                self.manage_memory(verbose=False)
+        else:
+            return loop
 
 
 if __name__ == "__main__":
     print("System on internal power")
     control = PicoControl()
-    control.run_loop(setting=True)
+    control.run_loop(loop=True, setting=True)

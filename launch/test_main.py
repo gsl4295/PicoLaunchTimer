@@ -3,10 +3,24 @@ from types import ModuleType
 from unittest import TestCase, main
 from unittest.mock import MagicMock
 
+from adafruit_display_text.scrolling_label import ScrollingLabel
+from adafruit_display_text import label
+from fontio import FontProtocol
+from terminalio import FONT
+
 
 class TestMain(TestCase):
     class FakePin:
         def switch_to_output(self, value): pass
+
+        def __setitem__(self, key, value):
+            pass
+
+        def append(self, value):
+            pass
+
+        def value(self):
+            pass
 
     # *** Here are a few convenience classes that minimally mock the actual implementation
     class FakeSocket:
@@ -47,6 +61,16 @@ class TestMain(TestCase):
         def close(self):
             pass
 
+    class FakeGC:
+        def __init__(self):
+            pass
+
+        def mem_free(self):
+            return 1
+
+        def collect(self):
+            pass
+
     @classmethod
     def setUpClass(cls):
         mock_board = ModuleType('board_definitions.raspberry_pi_pico_w')
@@ -60,7 +84,7 @@ class TestMain(TestCase):
         modules['board_definitions.raspberry_pi_pico_w'] = mock_board
 
         cls.fake_wifi = ModuleType("wifi")
-        cls.fake_wifi.radio = MagicMock(name="radio")
+        cls.fake_wifi.radio = MagicMock(name="radio", return_value=[ConnectionError, None])
         modules["wifi"] = cls.fake_wifi
 
         fake_dio = ModuleType("digitalio")
@@ -108,10 +132,15 @@ class TestMain(TestCase):
         fake_requests.Session = MagicMock(return_value=cls.fake_session_instance)
         modules["adafruit_requests"] = fake_requests
 
+        fake_gc = ModuleType("gc")
+        fake_gc.mem_free = MagicMock(TestMain.FakeGC().mem_free())
+        fake_gc.collect = MagicMock()
+        modules["gc"] = fake_gc
+
         from launch.main import PicoControl
         cls.control = PicoControl
 
-    def test_get_launch_info(self):
+    def test_get_launch_info(self): # Done
         p = self.control()
         # call it once with valid response data
         self.fake_session_instance.get.return_value = TestMain.FakeResponse(
@@ -146,7 +175,7 @@ class TestMain(TestCase):
         p.get_launch_info()
         self.assertEqual("ERROR t0", p.launch["t0"])
 
-    def test_define_auto_vars(self):
+    def test_define_auto_vars(self): # Up to date
         p = self.control()
         p.launch = {
             "name": "Ax-4",
@@ -167,40 +196,94 @@ class TestMain(TestCase):
             "win_close": "2025-06-10T13:00Z",
         }
         p.define_auto_vars()
-        self.assertEqual("2025-06-10T12:22Z", p.t0)
+        self.assertEqual("2025-06-10T12:22Z", p.t0) # Checks that t0 is valid
+
         p.launch["t0"] = None
         p.define_auto_vars()
-        self.assertEqual("2025-06-10T12:00Z", p.t0)
+        self.assertEqual("2025-06-10T12:00Z", p.t0) # Checks that win_open takes the place of t0
 
-    def test_manual_launch_info(self):
+    def test_get_utc_delta(self):
+        p = self.control()
+        p.time_response = {
+            "dstActive": True
+        }
+        total_delta = p.get_utc_delta(country="America", zone="Chicago", st_delta=-6)
+        self.assertEqual(total_delta, -5)
+        p.time_response = {
+            "dstActive": False
+        }
+        total_delta = p.get_utc_delta(country="America", zone="Chicago", st_delta=-6)
+        self.assertEqual(total_delta, -5)
+        pass
+
+    def test_manual_launch_info(self): # Done
         p = self.control()
         p.manual_launch_info()
         self.assertNotEqual("", p.t0)
 
-    def test_manage_memory(self):
-        # test it once with verbose and one not
+    def test_manage_memory(self): # Done
+        p = self.control()
+        old_mem, new_mem = p.manage_memory(verbose=False)
+        self.assertEqual(old_mem, new_mem)
+        old_mem, new_mem = p.manage_memory(verbose=True)
+        self.assertEqual(old_mem, new_mem)
+        pass
+
+    #def test_countdown_loop(self):
         #p = self.control()
-        pass
+        #p.main_row_1 = ScrollingLabel(font=FONT)
+        #p.main_row_2 = ScrollingLabel(font=FONT)
+        #p.main_row_3 = ScrollingLabel(font=FONT)
+        #p.main_row_4 = ScrollingLabel(font=FONT)
+        #p.main_row_5 = ScrollingLabel(font=FONT)
+        #p.main_row_6 = label.Label(font=FONT)
+        #p.main_row_7 = label.Label(font=FONT)
+        #p.countdown_text_area = label.Label(font=FONT)
+        #p.button.value = False
+        ## Manual countdown data set to true
+        #p.manual_setting = True
+        #p.countdown_loop()
+        #pass
 
-    def test_countdown_loop(self):
-        pass
-
-    def test_run_loop(self):
-        pass  # probably want to add an argument to run it once without the countdown loop
-
-    def test_get_utc_delta(self):
-        pass
+    #def test_run_loop(self):
+        #p = self.control()
+        #return_value = p.run_loop(loop=False)
+        #self.assertEqual(return_value, False)
+        #pass
 
     def test_wifi_connected(self):
+        p = self.control()
+        return_value = p.wifi_connect()
+        self.assertEqual(return_value, "Connected")
+        return_value = p.wifi_connect()
+        self.assertEqual(return_value, "Connected")
         pass
 
     def test_update_scrolls(self):
+        p = self.control()
+        p.main_row_1 = ScrollingLabel(font=FONT)
+        p.main_row_2 = ScrollingLabel(font=FONT)
+        p.main_row_3 = ScrollingLabel(font=FONT)
+        p.main_row_4 = ScrollingLabel(font=FONT)
+        p.main_row_5 = ScrollingLabel(font=FONT)
+        p.main_row_6 = label.Label(font=FONT)
+        p.main_row_7 = label.Label(font=FONT)
+        p.countdown_text_area = label.Label(font=FONT)
+        return_value = p.update_scrolls()
+        self.assertEqual(return_value, "Screen scrolled")
         pass
 
-    def test_visuals(self):
-        pass
+    #def test_visuals(self):
+        #p = self.control()
+        #p.visuals((71, 215, 0))
+        #self.assertEqual(p.countdown_text_area.text, "")
+        #self.assertEqual(p.main_row_7.text, "Loading...")
+        #pass
 
-    def test_led_toggle(self):
+    def test_led_toggle(self): # Done
+        p = self.control()
+        p.led_toggle(True)
+        self.assertEqual(p.led.value, True)
         pass
 
 
